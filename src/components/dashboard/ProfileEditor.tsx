@@ -951,9 +951,22 @@ export function ProfileEditor({ variant = "verified" }: { variant?: ProfileVaria
                 onQuickCreate={quickCreate}
                 onAddKind={(kind, value) => addBlock(kind, value)}
                 handle={normalized || handle}
+                onWidget={(id) => {
+                  if (id === "questions") {
+                    setPref("questionsEnabled", true);
+                    toast.success("Anonieme Vragenbox staat aan op je profiel");
+                  } else if (id === "badges") {
+                    setPref("badgeShowcaseVisible", true);
+                    toast.success("ROUT Badges staan aan op je profiel");
+                  } else if (id === "reach") {
+                    document.getElementById("studio-total-reach")?.scrollIntoView({ behavior: "smooth", block: "center" });
+                  } else {
+                    toast.info("Het Prikbord staat altijd op je profiel; beheer berichten bij Prikbord in de Studio");
+                  }
+                }}
               >
 
-                  <section className="space-y-3 rounded-2xl border border-border bg-card p-4 sm:p-5">
+                  <section id="studio-total-reach" className="space-y-3 rounded-2xl border border-border bg-card p-4 sm:p-5">
                     <h2 className="text-lg font-medium">Totaal bereik</h2>
                     <p className="text-sm text-muted-foreground">
                       Toon één badge met je totale volgersaantal over al je gekoppelde accounts.

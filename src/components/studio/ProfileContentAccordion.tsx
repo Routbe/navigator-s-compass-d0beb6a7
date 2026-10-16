@@ -2,7 +2,7 @@ import { type Dispatch, type ReactNode, type SetStateAction, useState } from "re
 import { Plus } from "lucide-react";
 import { AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ProfileLinksManager } from "@/components/dashboard/editor/ProfileLinksManager";
-import { AddComponentModal } from "@/components/studio/AddComponentModal";
+import { AddComponentModal, type WidgetId } from "@/components/studio/AddComponentModal";
 import { scheduledBlocks, type ProfileBlock } from "@/lib/profile";
 import type { QuickCreateOption } from "@/types/profile-editor";
 
@@ -19,6 +19,8 @@ interface Props {
   children?: ReactNode;
   /** Profielhandle voor bio-verificatie in de kluis. */
   handle?: string;
+  /** Zet een profielwidget aan vanuit de catalogus. */
+  onWidget?: (id: WidgetId) => void;
 }
 
 /**
@@ -37,6 +39,7 @@ export function ProfileContentAccordion({
   onAddKind,
   children,
   handle,
+  onWidget,
 }: Props) {
   const [libraryOpen, setLibraryOpen] = useState(false);
   const live = scheduledBlocks(blocks).length;
@@ -67,6 +70,7 @@ export function ProfileContentAccordion({
           onClose={() => setLibraryOpen(false)}
           onAdd={onAddKind}
           handle={handle}
+          onWidget={onWidget}
         />
 
         <ProfileLinksManager

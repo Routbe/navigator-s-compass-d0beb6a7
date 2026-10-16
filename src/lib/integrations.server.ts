@@ -186,7 +186,12 @@ export async function fetchStatus(provider: string, handle: string): Promise<Int
         | { displayName?: string; followersCount?: number; avatar?: string; description?: string }
         | null;
       if (!j) return null;
+      const feed = (await getJson(`https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${encodeURIComponent(handle)}&limit=1&filter=posts_no_replies`)) as
+        | { feed?: { post?: { indexedAt?: string; record?: { createdAt?: string } } }[] }
+        | null;
+      const lastPost = feed?.feed?.[0]?.post;
       return {
+        lastActiveAt: lastPost?.record?.createdAt ?? lastPost?.indexedAt,
         bio: j.description?.slice(0, 300),
         title: j.displayName || `@${handle}`,
         subtitle: typeof j.followersCount === "number" ? `${j.followersCount.toLocaleString("nl-BE")} volgers` : undefined,
@@ -199,6 +204,7 @@ export async function fetchStatus(provider: string, handle: string): Promise<Int
       if (!acct) return null;
       const domain = handle.split("@")[1]!;
       return {
+        lastActiveAt: acct.last_status_at ?? undefined,
         title: acct.display_name || `@${handle}`,
         subtitle: `@${handle.split("@")[0]} · ${domain}`,
         bio: stripHtml(acct.note ?? "").slice(0, 300),
@@ -316,7 +322,7 @@ export async function fetchStatus(provider: string, handle: string): Promise<Int
   }
 }
 
-type MastodonAccount = { display_name?: string; note?: string; url?: string; avatar?: string; avatar_static?: string; followers_count?: number };
+type MastodonAccount = { display_name?: string; note?: string; url?: string; avatar?: string; avatar_static?: string; followers_count?: number; last_status_at?: string | null };
 
 async function mastodonAccount(handle: string): Promise<MastodonAccount | null> {
   const { isPublicHost } = await import("./open-web-rules");

@@ -1,10 +1,14 @@
 /** Live-status visibility: some integrations only show while (recently) in use. Browser-safe. */
 const HOUR = 3600_000;
 
-/** Providers with an activity window; others (chess, feeds, wallets) always show. */
+/** Providers with an activity window; others (chess, wallets, RSS) always show. */
 export const LIVE_WINDOW_MS: Record<string, number> = {
   github: 24 * HOUR,
   gitlab: 24 * HOUR,
+  // Fediverse: only while the newest post is less than a day old.
+  mastodon: 24 * HOUR,
+  bluesky: 24 * HOUR,
+  wsocial: 24 * HOUR,
 };
 
 export function isLiveActive(provider: string, lastActiveAt: string | null | undefined, now = Date.now()): boolean {

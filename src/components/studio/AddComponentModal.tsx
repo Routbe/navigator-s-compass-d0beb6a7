@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowLeft, BadgeCheck } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Search } from "lucide-react";
 import { BrandIcon } from "@/components/integrations/BrandIcon";
 import { integrationById } from "@/lib/integrations-catalog";
 import { getMyIntegrations, saveIntegration } from "@/lib/integrations.functions";
@@ -33,20 +33,21 @@ export const COMPONENT_LIBRARY: LibraryGroup[] = [
     id: "standard",
     title: "🔗 Links & Socials",
     items: [
-      { kind: "link", label: "Link", note: "Elke webpagina" },
-      { kind: "instagram", label: "Socials", note: "Instagram, TikTok, X, …" },
-      { kind: "text", label: "Tekst / Koptekst", note: "Intro, kop of aankondiging", isNew: true },
-      { kind: "spacer", label: "Scheidingslijn", note: "Rust tussen secties", isNew: true },
+      { kind: "link", label: "Eigen link", note: "Elke webpagina" },
+      { kind: "instagram", label: "Socials icoon-rij", note: "Instagram, TikTok, X, LinkedIn, …" },
+      { kind: "text", label: "Tekst / Tussenkop", note: "Intro, kop of aankondiging", isNew: true },
+      { kind: "spacer", label: "Scheidingslijn / Spacer", note: "Rust tussen secties", isNew: true },
+      { kind: "vcard", label: "vCard contactkaart", note: "Eén tik → in de contacten" },
     ],
   },
   {
     id: "media",
-    title: "Media",
+    title: "🎬 Media",
     items: [
-      { kind: "video", label: "Video", note: "YouTube, Vimeo of TikTok", isNew: true },
+      { kind: "video", label: "Video embed", note: "YouTube, Vimeo of TikTok", isNew: true },
       { kind: "media_gallery", label: "Afbeelding / Galerij", note: "Foto's in een raster", isNew: true },
-      { kind: "spotify", label: "Spotify / Audio", note: "Track, album of podcast", isNew: true },
-      { kind: "soundcloud", label: "Soundcloud", note: "Track of profiel" },
+      { kind: "spotify", label: "Spotify / Audio embed", note: "Track, album of podcast", isNew: true },
+      { kind: "soundcloud", label: "SoundCloud embed", note: "Track of profiel" },
     ],
   },
   {
@@ -55,21 +56,28 @@ export const COMPONENT_LIBRARY: LibraryGroup[] = [
     items: [
       { kind: "newsletter", label: "Nieuwsbrief", note: "Laat bezoekers inschrijven", isNew: true },
       { kind: "contact_form", label: "Contactformulier", note: "Direct bericht", isNew: true },
-      { kind: "vcard", label: "vCard", note: "Eén tik → in de contacten" },
-      { kind: "live_poll", label: "Poll", note: "Stel je volgers een vraag" },
+      { kind: "live_poll", label: "Live Poll", note: "Stel je volgers een vraag" },
+      { kind: "widget:questions", label: "Anonieme Vragenbox", note: "Laat bezoekers anoniem vragen stellen" },
+      { kind: "widget:guestbook", label: "Prikbord / Guestbook", note: "Berichten van leden" },
+      { kind: "widget:badges", label: "ROUT Badges", note: "Je verdiende badges" },
+      { kind: "widget:reach", label: "Totaal Bereik", note: "Je volgers over alle accounts" },
     ],
   },
   {
     id: "business",
-    title: "Zakelijk & Web3",
+    title: "💼 Zakelijk & Web3",
     items: [
       { kind: "calendly", label: "Calendly-boeking", note: "Laat mensen een moment kiezen", isNew: true },
       { kind: "booking_request", label: "Boekingsaanvraag", note: "Eigen tijdslots" },
-      { kind: "matrix", label: "Matrix", note: "Soeverein chatten" },
-      { kind: "mastodon", label: "Fediverse", note: "Mastodon, Pixelfed, …" },
+      { kind: "matrix", label: "Matrix chat", note: "Soeverein chatten" },
+      { kind: "vault:lightning", label: "Bitcoin Lightning", note: "Ontvang sats" },
+      { kind: "vault:monero", label: "Monero", note: "Publiek XMR-adres" },
+      { kind: "vault:ethereum", label: "Ethereum", note: "Publiek 0x-adres" },
     ],
   },
 ];
+
+export type WidgetId = "questions" | "guestbook" | "badges" | "reach";
 
 /** Live kaarten die een koppeling uit de Integratiekluis hergebruiken. */
 export const LIVE_COMPONENTS: { provider: string; note: string }[] = [
@@ -89,10 +97,14 @@ interface Props {
   onClose: () => void;
   onAdd: (kind: string, value?: string) => void;
   handle?: string;
+  /** Zet een profielwidget (vragenbox, badges, …) aan. */
+  onWidget?: (id: WidgetId) => void;
 }
 
 /** De Component-bibliotheek: alles wat je aan je pagina kunt toevoegen. */
-export function AddComponentModal({ open, onClose, onAdd, handle }: Props) {
+export function AddComponentModal({ open, onClose, onAdd, handle, onWidget }: Props) {
+  const [tab, setTab] = useState<string>("live");
+  const [query, setQuery] = useState("");
   const [videoOpen, setVideoOpen] = useState(false);
   const [proOpen, setProOpen] = useState(false);
   /** null = catalogus; "all" = volledige kluis; anders één dienst. */
@@ -110,6 +122,7 @@ export function AddComponentModal({ open, onClose, onAdd, handle }: Props) {
 
   const close = () => {
     setVault(null);
+    setQuery("");
     onClose();
   };
 
@@ -134,6 +147,30 @@ export function AddComponentModal({ open, onClose, onAdd, handle }: Props) {
     }
   };
 
+  const q = query.trim().toLowerCase();
+  const matches = (text: string) => text.toLowerCase().includes(q);
+  const available = (item: LibraryItem) =>
+    item.kind === "video" || item.kind.includes(":") || BLOCK_KINDS.some((k) => k.kind === item.kind);
+  const liveMatches = LIVE_COMPONENTS.filter(({ provider, note }) =>
+    !q || matches(integrationById(provider)?.label ?? provider) || matches(note));
+  const groupMatches = COMPONENT_LIBRARY
+    .filter((g) => q || tab === g.id)
+    .map((g) => ({ ...g, items: g.items.filter((i) => available(i) && (!q || matches(i.label) || matches(i.note))) }))
+    .filter((g) => g.items.length > 0);
+
+  const pickItem = (item: LibraryItem) => {
+    if (item.kind.startsWith("vault:")) return setVault(item.kind.slice(6));
+    close();
+    if (item.kind.startsWith("widget:")) {
+      const id = item.kind.slice(7) as WidgetId;
+      if (onWidget) onWidget(id);
+      else toast.info(`${item.label} beheer je verderop in de Studio`);
+      return;
+    }
+    if (item.kind === "video") setVideoOpen(true);
+    else onAdd(item.kind);
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={(v) => !v && close()}>
@@ -150,7 +187,35 @@ export function AddComponentModal({ open, onClose, onAdd, handle }: Props) {
               {vault === "all" && handle && <SocialVerifyPanel handle={handle} />}
             </div>
           ) : (
-          <div className="space-y-6">
+          <div className="space-y-4">
+            <label className="relative block">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Zoek componenten, live kaarten en widgets…"
+                aria-label="Zoek componenten"
+                className="h-10 w-full rounded-xl border border-input bg-background pl-9 pr-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+            </label>
+            {!q && (
+              <div role="tablist" aria-label="Categorieën" className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
+                {[{ id: "live", title: "⚡ Live Status & Feeds" }, ...COMPONENT_LIBRARY].map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={tab === t.id}
+                    onClick={() => setTab(t.id)}
+                    className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${tab === t.id ? "border-foreground bg-foreground text-background" : "border-border hover:bg-muted"}`}
+                  >
+                    {t.title}
+                  </button>
+                ))}
+              </div>
+            )}
+            {(q || tab === "live") && liveMatches.length > 0 && (
             <section className="space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">⚡ Live Status &amp; Feeds</h3>
@@ -159,7 +224,7 @@ export function AddComponentModal({ open, onClose, onAdd, handle }: Props) {
                 </button>
               </div>
               <div className="grid gap-2 sm:grid-cols-2">
-                {LIVE_COMPONENTS.map(({ provider, note }) => {
+                {liveMatches.map(({ provider, note }) => {
                   const item = integrationById(provider);
                   if (!item) return null;
                   const row = rowFor(provider);
@@ -186,23 +251,18 @@ export function AddComponentModal({ open, onClose, onAdd, handle }: Props) {
                 })}
               </div>
             </section>
-            {COMPONENT_LIBRARY.map((group) => (
+            )}
+            {groupMatches.map((group) => (
               <section key={group.id} className="space-y-2">
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {group.title}
                 </h3>
                 <div className="grid gap-2 sm:grid-cols-2">
-                  {group.items
-                    .filter((item) => item.kind === "video" || BLOCK_KINDS.some((k) => k.kind === item.kind))
-                    .map((item) => (
+                  {group.items.map((item) => (
                       <button
                         key={item.kind}
                         type="button"
-                        onClick={() => {
-                          close();
-                          if (item.kind === "video") setVideoOpen(true);
-                          else onAdd(item.kind);
-                        }}
+                        onClick={() => pickItem(item)}
                         className="rounded-xl border border-border bg-background p-3 text-left transition-colors hover:bg-muted"
                       >
                         <span className="flex items-center gap-1.5 text-sm font-medium">
@@ -219,6 +279,9 @@ export function AddComponentModal({ open, onClose, onAdd, handle }: Props) {
                 </div>
               </section>
             ))}
+            {q && liveMatches.length === 0 && groupMatches.length === 0 && (
+              <p className="py-8 text-center text-sm text-muted-foreground">Geen componenten gevonden.</p>
+            )}
           </div>
           )}
         </DialogContent>
