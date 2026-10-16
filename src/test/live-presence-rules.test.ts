@@ -27,3 +27,13 @@ describe("Live Integraties list", () => {
     expect(LCP).not.toContain("spotify");
   });
 });
+
+describe("Fediverse 24-hour window", () => {
+  it.each(["mastodon", "bluesky", "wsocial"])("%s shows with a post in the last 24 hours", (p) => {
+    expect(isLiveActive(p, "2026-10-15T01:00:00Z", now)).toBe(true);
+  });
+  it.each(["mastodon", "bluesky", "wsocial"])("%s hides when the newest post is older than 24 hours", (p) => {
+    expect(isLiveActive(p, "2026-10-14T11:00:00Z", now)).toBe(false);
+    expect(isLiveActive(p, null, now)).toBe(false);
+  });
+});
