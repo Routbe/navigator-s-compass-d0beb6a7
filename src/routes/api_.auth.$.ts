@@ -122,6 +122,16 @@ export async function handleAuthRequest({ request }: { request: Request }) {
       return providerNotConfigured(provider, missingProviderKeys(provider));
     }
 
+    if (appMode() === "admin" && request.method === "POST" && ALTCHA_PATHS.has(relativePath)) {
+      let email: unknown;
+      try { email = ((await request.clone().json()) as { email?: unknown }).email; } catch { email = undefined; }
+      const { canUseAdminEmail } = await import("@/lib/auth/owner-admin.server");
+      if (!(await canUseAdminEmail(email))) return Response.json(
+        { code: "admin_only", message: "Dit beheerportaal is uitsluitend toegankelijk voor geautoriseerde beheerders." },
+        { status: 403, headers: { "cache-control": "no-store" } },
+      );
+    }
+
     if (provider === "gitlab" && SOCIAL_BODY_PATHS.has(relativePath)) {
       const { gitlabRedirectUri } = await import("@/lib/better-auth.server");
       console.info(`[auth] gitlab redirect_uri=${gitlabRedirectUri()}`);

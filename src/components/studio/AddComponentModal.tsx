@@ -10,6 +10,7 @@ import { getMyPresence, setSpotifyPresenceVisible } from "@/lib/presence.functio
 import { IntegrationVault } from "./IntegrationVault";
 import { SocialVerifyPanel } from "@/components/dashboard/SocialVerifyPanel";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { isProfileSectionKind } from "@/lib/profile-section-blocks";
 import { BLOCK_KINDS } from "@/lib/profile";
 import { VideoBlockDialog } from "./VideoBlockDialog";
 import { ProUpgradeModal } from "./ProUpgradeModal";
@@ -161,6 +162,7 @@ export function AddComponentModal({ open, onClose, onAdd, handle, onWidget }: Pr
   const pickItem = (item: LibraryItem) => {
     if (item.kind.startsWith("vault:")) return setVault(item.kind.slice(6));
     close();
+    if (isProfileSectionKind(item.kind)) { onAdd(item.kind); return; }
     if (item.kind.startsWith("widget:")) {
       const id = item.kind.slice(7) as WidgetId;
       if (onWidget) onWidget(id);

@@ -1,3 +1,4 @@
+import { isProfileSectionKind, usesSectionFallback } from "@/lib/profile-section-blocks";
 import { NowPlaying, useNowPlaying } from "@/components/profile/NowPlaying";
 import { SnapchatProfile } from "@/components/profile/SnapchatProfile";
 import { ProfileIntegrations } from "@/components/profile/ProfileIntegrations";
@@ -139,7 +140,7 @@ export function ProfileView({
       b.value.trim() !== "" ||
       b.kind === "newsletter" ||
       b.kind === "booking_request" ||
-      b.kind === "spacer",
+      b.kind === "spacer" || isProfileSectionKind(b.kind),
   );
   /** Accent-animatie op de gekozen hoofdlink (glow, pulse of shimmer). */
   const ctaClass = (blockId: string) => {
@@ -419,7 +420,7 @@ export function ProfileView({
         {profile.username && <ProfileIntegrations handle={profile.username} theme={t} />}
         {profile.username && <TipJarButton handle={profile.username} theme={t} />}
         <ProfilePassport handle={profile.username} theme={t} />
-        {profile.username && <ProfileGuestbook handle={profile.username} theme={t} />}
+        {profile.username && usesSectionFallback(profile.blocks, "widget:guestbook") && <ProfileGuestbook handle={profile.username} theme={t} />}
         {profile.username && prefs.questionsEnabled && <ProfileQuestions handle={profile.username} theme={t} />}
 
         {earlyBeliever && (
@@ -480,7 +481,7 @@ export function ProfileView({
           </p>
         )}
 
-        {profile.show_total_reach && (profile.total_reach_count ?? 0) > 0 && (
+        {usesSectionFallback(profile.blocks, "widget:reach") && profile.show_total_reach && (profile.total_reach_count ?? 0) > 0 && (
           <span
             className="mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold"
             style={{ border: `1px solid ${t.border}`, color: t.text }}
@@ -553,7 +554,7 @@ export function ProfileView({
           </button>
         )}
 
-        {prefs.badgeShowcaseVisible && <BadgeShowcase userId={profile.id} theme={t} />}
+        {usesSectionFallback(profile.blocks, "widget:badges") && prefs.badgeShowcaseVisible && <BadgeShowcase userId={profile.id} theme={t} />}
 
         {prefs.timelineVisible && <ProfileTimeline userId={profile.id} theme={t} />}
 
@@ -574,7 +575,13 @@ export function ProfileView({
             </p>
           )}
           {blocks.map((b) =>
-            b.kind === "spacer" ? (
+            b.kind === "widget:guestbook" ? (
+              profile.username ? <div key={b.id} className="w-full lg:col-span-full"><ProfileGuestbook handle={profile.username} theme={t} /></div> : null
+            ) : b.kind === "widget:badges" ? (
+              prefs.badgeShowcaseVisible ? <div key={b.id} className="w-full lg:col-span-full"><BadgeShowcase userId={profile.id} theme={t} /></div> : null
+            ) : b.kind === "widget:reach" ? (
+              profile.show_total_reach && (profile.total_reach_count ?? 0) > 0 ? <div key={b.id} className="flex w-full items-center justify-center gap-1.5 text-sm lg:col-span-full"><Users className="h-4 w-4" aria-hidden />{formatReach(profile.total_reach_count ?? 0)} bereik</div> : null
+            ) : b.kind === "spacer" ? (
               <div key={b.id} className="h-6 w-full" aria-hidden />
             ) : b.kind === "text" ? (
               <p

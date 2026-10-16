@@ -65,20 +65,6 @@ function safeEqualHex(a: string, b: string) {
   return ab.length === bb.length && timingSafeEqual(ab, bb);
 }
 
-let ensured = false;
-async function ensureTable() {
-  if (ensured) return;
-  const { runSchemaEnsure } = await import("@/lib/db/schema-ensure.server");
-  await runSchemaEnsure(
-    () => sql`create table if not exists public.altcha_used (
-      signature text primary key,
-      expires_at timestamptz not null
-    )`,
-    "altcha_used",
-  );
-  ensured = true;
-}
-
 /** Checks a proof (base64 JSON). Consumes it on success, so it works exactly once. */
 export async function verifyAltcha(
   payload: string | null | undefined,
@@ -115,7 +101,7 @@ export async function verifyAltcha(
   if (!safeEqualHex(sha256(salt + number), challenge)) return { ok: false, reason: "bad_solution" };
 
   try {
-    await ensureTable();
+    // db/54 owns the table: the least-privilege login role must never run DDL.
     const insert = () => sql`
       insert into public.altcha_used (signature, expires_at)
       values (${signature}, to_timestamp(${expires}))
@@ -165,7 +151,6 @@ export async function identityNeedsHardChallenge(identityHash: string | null | u
 
 /** Deletes expired replay rows (cron). */
 export async function purgeExpiredAltcha(): Promise<{ deleted: number }> {
-  await ensureTable();
   const rows = (await sql`delete from public.altcha_used where expires_at < now() returning 1`) as unknown[];
   return { deleted: rows.length };
 }

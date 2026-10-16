@@ -27,6 +27,15 @@ export function isOwnerEmail(email: string | null | undefined): boolean {
   return ownerEmails().includes(email.trim().toLowerCase());
 }
 
+/** Eligibility only; never grants privileges. */
+export async function canUseAdminEmail(email: unknown): Promise<boolean> {
+  if (typeof email !== "string" || !email.trim()) return false;
+  const normalized = email.trim().toLowerCase();
+  if (isOwnerEmail(normalized)) return true;
+  const rows = (await sql`select 1 from public.user_roles r join public.users u on u.id = r.user_id where lower(u.email) = ${normalized} and r.role::text = 'admin' limit 1`) as unknown[];
+  return rows.length > 0;
+}
+
 async function grantAdmin(userId: string): Promise<void> {
   await sql`
     insert into public.user_roles (user_id, role)
