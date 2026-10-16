@@ -13,7 +13,7 @@ function walk(dir: string, files: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
     const full = path.join(dir, entry);
     if (statSync(full).isDirectory()) {
-      if (entry === "test" || entry === "components") continue;
+      if (entry === "test" || entry === "components" || entry === "integrations") continue;
       walk(full, files);
     } else if (
       /\.(ts|tsx)$/.test(entry) &&

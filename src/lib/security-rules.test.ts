@@ -68,9 +68,14 @@ describe("security headers", () => {
   it("sets HSTS on https, COOP and frame-ancestors", () => {
     const h = securityHeaders(true);
     expect(h["Strict-Transport-Security"]).toContain("max-age=31536000");
-    expect(h["Cross-Origin-Opener-Policy"]).toBe("same-origin-allow-popups");
+    expect(h["Cross-Origin-Opener-Policy"]).toBe("unsafe-none");
     expect(h["Content-Security-Policy"]).toContain("frame-ancestors 'self' https://rout.be");
     expect(securityHeaders(false)["Strict-Transport-Security"]).toBeUndefined();
+  });
+  it("keeps OAuth popups connected on sign-in and settings pages", () => {
+    for (const path of ["/auth", "/auth/continue", "/settings", "/settings/security"]) {
+      expect(securityHeaders(true, path)["Cross-Origin-Opener-Policy"]).toBe("same-origin-allow-popups");
+    }
   });
   it("flags weak session cookies", () => {
     expect(sessionCookieProblems("rout_session=a; Path=/; HttpOnly; Secure; SameSite=Lax")).toEqual([]);

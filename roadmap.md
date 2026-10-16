@@ -1,4 +1,6 @@
 # Roadmap
+- [ ] Afronding: privacy/COOP tests, ALTCHA zonder runtime DDL, admin-only e-mailaanmelding, drie versleepbare profielblokken
+- [ ] Afronding: volledige testsuite en beschikbare eindcontroles
 - [ ] Portaalscheiding: navigatie, aanmelding, servertoegang en afzonderlijke versies controleren en corrigeren
 - [ ] Portaalscheiding: gerichte regressietests en openbare/browsercontrole
 - [x] A: typecheck + tests groen
