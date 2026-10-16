@@ -1,0 +1,17 @@
+{
+  "source": "github:Routbe/navigator-s-compass-007548e2",
+  "app": "ROUT — QR infrastructure & alias platform (TanStack Start, better-auth, Neon Postgres, Stripe)",
+  "capabilities": [
+    { "capability": "application code (1109 src files, 154 routes)", "source": "github repo", "outcome": "migrate", "status": "verified", "next_action": "none — builds and renders; home, /auth, /explore, /about, /sponsor verified in browser" },
+    { "capability": "database schema + records (Neon Postgres, 94 migrations)", "source": "existing Neon DB", "outcome": "preserve", "status": "verified", "next_action": "none — Neon connector linked; live data confirmed on /explore and /api/public/health" },
+    { "capability": "auth (better-auth: email magic link, password, passkeys, 2FA)", "source": "src/lib/better-auth.server.ts", "outcome": "preserve", "status": "in_progress", "next_action": "needs BETTER_AUTH_SECRET + email sending (Brevo) secrets for full sign-in verification" },
+    { "capability": "auth identities / existing users", "source": "neon_auth schema on Neon", "outcome": "preserve", "status": "verified", "next_action": "none — users stay in the existing Neon database, no import needed" },
+    { "capability": "social sign-in (Google, GitHub, GitLab, Apple, OIDC)", "source": "env keys", "outcome": "preserve", "status": "pending", "next_action": "request provider client IDs/secrets via secure secret form; update OAuth callback URLs at cutover" },
+    { "capability": "Stripe (checkout, connect, webhooks, sponsor)", "source": "code + env keys", "outcome": "preserve", "status": "pending", "next_action": "request Stripe keys via secure secret form; update webhook URLs at cutover" },
+    { "capability": "public API endpoints + cron (/api/public/*)", "source": "src/routes/api_.public.*", "outcome": "preserve", "status": "in_progress", "next_action": "health endpoint verified; cron needs LOVABLE_CRON_SECRET and scheduled setup after publish" },
+    { "capability": "storage / uploaded files (Infomaniak, avatar objects)", "source": "code", "outcome": "preserve", "status": "pending", "next_action": "request storage credentials via secure secret form" },
+    { "capability": "email (Brevo templates)", "source": "src/emails", "outcome": "preserve", "status": "pending", "next_action": "request Brevo API key via secure secret form" },
+    { "capability": "remaining server secrets (~25 random secrets)", "source": "ENVIRONMENT.md", "outcome": "migrate", "status": "pending", "next_action": "request via secure secret form before live verification" },
+    { "capability": "cutover (rout.be domain, OAuth callback URLs, Stripe webhook URLs)", "source": "n/a", "outcome": "cutover", "status": "pending", "next_action": "after publish and verification" }
+  ]
+}

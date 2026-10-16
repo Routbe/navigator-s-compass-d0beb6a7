@@ -1,0 +1,4 @@
+- ROUT-presets are the only one-click styling; applying one always sets `backgroundCustom=false` via `presetPrefEntries`, and background fine-tuning lives behind that switch. Why: one source of truth, no duplicate theme lists.
+- Studio autosaves private drafts, publishes with revision checks; public reads never use drafts.
+- Layered design lives as one JSON string in `display_prefs.designLayers`, normalized by `normalizeDesignLayers` server-side and on render. Why: display_prefs is flat; client input stays untrusted.
+- Integrations are linked once in the account-level Integratiekluis (`studio/IntegrationVault`, opened only from the "+ Component toevoegen" catalog); per-profile live toggles live under Live Status (`studio/LiveIntegrations`). Why: one verification, reused everywhere.
